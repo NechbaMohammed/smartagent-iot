@@ -67,7 +67,7 @@ flowchart TB
     end
 
     subgraph COORD["⚖️ Couche Supervision & Décision (coordinateur)"]
-        CB["CoordinateurBatiment<br/>• Surveillance paires (A-B, B-C)<br/>• Équilibrage si |ΔT| > 4.0°C"]
+        CB["CoordinateurBatiment<br/>• Surveillance paires (A-B, B-C)<br/>• Équilibrage si écart > 4.0°C"]
     end
 
     subgraph OPENHAB["🏠 Supervision Domotique & UI (openHAB 4 : 8080)"]
@@ -96,8 +96,8 @@ flowchart TB
     CB -->|RMI lookup port 2199| AG_B
     CB -->|RMI lookup port 2199| AG_C
 
-    CB -.->|setConsigneTemperature() si |ΔT| > 4°C| AG_A
-    CB -.->|setConsigneTemperature() si |ΔT| > 4°C| AG_B
+    CB -.->|"setConsigneTemperature() si écart > 4°C"| AG_A
+    CB -.->|"setConsigneTemperature() si écart > 4°C"| AG_B
 
     %% Command Topics
     AG_A -->|publish consigne| TOPIC_ACT
@@ -155,121 +155,118 @@ public interface IAgentPiece extends Remote {
 classDiagram
     direction TB
 
-    package "common-api" {
-        class Remote {
-            <<interface>>
-        }
-
-        class IAgentPiece {
-            <<interface>>
-            +getTemperature() double
-            +getLuminosite() int
-            +isOccupee() boolean
-            +setConsigneTemperature(double t) void
-            +getEtat() String
-            +getEtatJson() String
-        }
-
-        class Constantes {
-            <<final>>
-            +String MQTT_BROKER_URI
-            +int RMI_REGISTRY_PORT
-            +String SALLE_A
-            +String SALLE_B
-            +String CUISINE
-            +double ECART_TEMPERATURE_MAX
-            +int TIMEOUT_CAPTEUR_SECONDES
-            +topicCapteur(piece, type) String
-            +topicActuateur(piece, type) String
-        }
-
-        class EtatPieceDto {
-            -String piece
-            -double temperature
-            -int luminosite
-            -boolean occupation
-            -double consigneThermostat
-            -String dernierMessageUtc
-            -boolean enTimeout
-            +toJson() String
-            +fromJson(String json)$ EtatPieceDto
-        }
+    %% Module common-api
+    class Remote {
+        <<interface>>
     }
 
-    package "sensor-simulator" {
-        class Runnable {
-            <<interface>>
-        }
-
-        class CapteurSimulateur {
-            -String piece
-            -MqttClient client
-            -double currentTemp
-            -int currentLum
-            -boolean currentOccupation
-            +run() void
-            +publishTemp() void
-            +publishLuminosite() void
-            +publishOccupation() void
-            +arreter() void
-        }
-
-        class SimulateurMain {
-            +main(String[] args)$ void
-        }
+    class IAgentPiece {
+        <<interface>>
+        +getTemperature() double
+        +getLuminosite() int
+        +isOccupee() boolean
+        +setConsigneTemperature(double t) void
+        +getEtat() String
+        +getEtatJson() String
     }
 
-    package "agent-piece" {
-        class UnicastRemoteObject {
-        }
-
-        class AgentPiece {
-            -String nomPiece
-            -volatile double temperature
-            -volatile int luminosite
-            -volatile boolean occupation
-            -volatile double consigneThermostat
-            -volatile long dernierMessageTimestampMs
-            -MqttClient mqttClient
-            +demarrerMqtt() void
-            +isEnTimeout() boolean
-            +setConsigneTemperature(double t) void
-            +getEtat() String
-        }
-
-        class AgentPieceMain {
-            +main(String[] args)$ void
-        }
+    class Constantes {
+        <<utility>>
+        +String MQTT_BROKER_URI
+        +int RMI_REGISTRY_PORT
+        +String SALLE_A
+        +String SALLE_B
+        +String CUISINE
+        +double ECART_TEMPERATURE_MAX
+        +int TIMEOUT_CAPTEUR_SECONDES
+        +topicCapteur(piece, type)$ String
+        +topicActuateur(piece, type)$ String
     }
 
-    package "coordinateur" {
-        class CoordinateurBatiment {
-            -Map~String, IAgentPiece~ agents
-            -List~PairePieces~ pairesAdjacentes
-            +connecterAgents() void
-            +equilibrerTemperatures() void
-        }
-
-        class CoordinateurMain {
-            +main(String[] args)$ void
-        }
+    class EtatPieceDto {
+        -String piece
+        -double temperature
+        -int luminosite
+        -boolean occupation
+        -double consigneThermostat
+        -String dernierMessageUtc
+        -boolean enTimeout
+        +toJson() String
+        +fromJson(String json)$ EtatPieceDto
     }
 
-    %% Relations
+    %% Module sensor-simulator
+    class Runnable {
+        <<interface>>
+    }
+
+    class CapteurSimulateur {
+        -String piece
+        -MqttClient client
+        -double currentTemp
+        -int currentLum
+        -boolean currentOccupation
+        +run() void
+        +publishTemp() void
+        +publishLuminosite() void
+        +publishOccupation() void
+        +arreter() void
+    }
+
+    class SimulateurMain {
+        +main(String[] args)$ void
+    }
+
+    %% Module agent-piece
+    class UnicastRemoteObject {
+    }
+
+    class AgentPiece {
+        -String nomPiece
+        -double temperature
+        -int luminosite
+        -boolean occupation
+        -double consigneThermostat
+        -long dernierMessageTimestampMs
+        -MqttClient mqttClient
+        +demarrerMqtt() void
+        +isEnTimeout() boolean
+        +setConsigneTemperature(double t) void
+        +getEtat() String
+    }
+
+    class AgentPieceMain {
+        +main(String[] args)$ void
+    }
+
+    %% Module coordinateur
+    class CoordinateurBatiment {
+        -Map agents
+        -List pairesAdjacentes
+        +connecterAgents() void
+        +equilibrerTemperatures() void
+    }
+
+    class CoordinateurMain {
+        +main(String[] args)$ void
+    }
+
+    %% Relations d'héritage et réalisation
     Remote <|-- IAgentPiece
     UnicastRemoteObject <|-- AgentPiece
     IAgentPiece <|.. AgentPiece
     Runnable <|.. CapteurSimulateur
 
-    AgentPiece ..> Constantes
-    AgentPiece ..> EtatPieceDto
-    CapteurSimulateur ..> Constantes
-    CoordinateurBatiment ..> IAgentPiece : invoque via RMI
-    CoordinateurBatiment ..> Constantes
+    %% Dépendances entre modules
+    AgentPiece ..> Constantes : utilise
+    AgentPiece ..> EtatPieceDto : sérialise
+    CapteurSimulateur ..> Constantes : utilise
+    CoordinateurBatiment ..> IAgentPiece : RMI invoke
+    CoordinateurBatiment ..> Constantes : seuils
 
-    SimulateurMain ..> CapteurSimulateur : gère l'exécution
-    AgentPieceMain ..> AgentPiece : enregistre dans RMI
-    CoordinateurMain ..> CoordinateurBatiment : exécute boucle périodique
+    SimulateurMain ..> CapteurSimulateur : lance
+    AgentPieceMain ..> AgentPiece : RMI registry
+    CoordinateurMain ..> CoordinateurBatiment : supervise
 ```
 
 ---
@@ -349,7 +346,7 @@ sequenceDiagram
     Coord->>AgB: RMI call: getTemperature()
     AgB-->>Coord: 19.0 °C
 
-    Note over Coord: Écart = |25.5 - 19.0| = 6.5 °C > 4.0 °C !<br/>Calcul consigne cible = (25.5+19.0)/2 = 22.2 °C
+    Note over Coord: Écart = 25.5 - 19.0 = 6.5 °C > 4.0 °C !<br/>Calcul consigne cible = (25.5+19.0)/2 = 22.2 °C
     Coord->>AgA: RMI call: setConsigneTemperature(22.2)
     AgA->>MQTT: PUBLISH batiment/salleA/actuateur/thermostat ("22.2")
     Note over Coord: Journalise l'ajustement dans les logs
@@ -369,7 +366,7 @@ sequenceDiagram
     participant OH as openHAB
 
     Note over SimA: Panne réseau ou arrêt du capteur
-    SimA-xAgA: Aucun message MQTT envoyé
+    SimA--xAgA: Aucun message MQTT envoyé
 
     Note over AgA: 30 secondes s'écoulent sans message
     Coord->>AgA: RMI call: getEtat()
