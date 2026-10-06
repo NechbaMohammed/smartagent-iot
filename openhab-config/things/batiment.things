@@ -1,0 +1,36 @@
+// ==============================================================================
+// Configuration Things pour openHAB 4 — SmartAgent-IoT
+// Fichier : conf/things/batiment.things
+// ==============================================================================
+
+// 1. Définition du Broker MQTT local (Eclipse Mosquitto)
+Bridge mqtt:broker:mosquitto "Broker Mosquitto Local" [
+    host="localhost",
+    port=1883,
+    secure=false
+]
+
+// 2. Définition des Things pour chaque pièce
+Thing mqtt:topic:salleA "Salle A" (mqtt:broker:mosquitto) {
+    Channels:
+        Type number : temperature [ stateTopic="batiment/salleA/capteur/temperature" ]
+        Type number : luminosite  [ stateTopic="batiment/salleA/capteur/luminosite" ]
+        Type switch : occupation  [ stateTopic="batiment/salleA/capteur/occupation", on="true", off="false" ]
+        Type number : thermostat  [ commandTopic="batiment/salleA/actuateur/thermostat" ]
+}
+
+Thing mqtt:topic:salleB "Salle B" (mqtt:broker:mosquitto) {
+    Channels:
+        Type number : temperature [ stateTopic="batiment/salleB/capteur/temperature" ]
+        Type number : luminosite  [ stateTopic="batiment/salleB/capteur/luminosite" ]
+        Type switch : occupation  [ stateTopic="batiment/salleB/capteur/occupation", on="true", off="false" ]
+        Type number : thermostat  [ commandTopic="batiment/salleB/actuateur/thermostat" ]
+}
+
+Thing mqtt:topic:cuisine "Cuisine" (mqtt:broker:mosquitto) {
+    Channels:
+        Type number : temperature [ stateTopic="batiment/cuisine/capteur/temperature" ]
+        Type number : luminosite  [ stateTopic="batiment/cuisine/capteur/luminosite" ]
+        Type switch : occupation  [ stateTopic="batiment/cuisine/capteur/occupation", on="true", off="false" ]
+        Type number : thermostat  [ commandTopic="batiment/cuisine/actuateur/thermostat" ]
+}

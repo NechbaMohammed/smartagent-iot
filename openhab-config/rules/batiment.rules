@@ -1,0 +1,53 @@
+// ==============================================================================
+// Règles DSL pour openHAB 4 — SmartAgent-IoT
+// Fichier : conf/rules/batiment.rules
+// ==============================================================================
+
+// --- RÈGLE 1 : ÉCONOMIE D'ÉNERGIE (Baisse de chauffage si pièce vide) ---
+rule "Economie energie salleA"
+when
+    Item SalleA_Occupation changed to OFF
+then
+    logInfo("SmartAgent.Rules", "Salle A inoccupée : réduction de la consigne à 18°C pour économie d'énergie.")
+    SalleA_Thermostat.sendCommand(18.0)
+end
+
+rule "Economie energie salleB"
+when
+    Item SalleB_Occupation changed to OFF
+then
+    logInfo("SmartAgent.Rules", "Salle B inoccupée : réduction de la consigne à 18°C.")
+    SalleB_Thermostat.sendCommand(18.0)
+end
+
+
+// --- RÈGLE 2 : ALERTE SURCHAUFFE / ANOMALIE THERMIQUE ---
+rule "Alerte surchauffe salleA"
+when
+    Item SalleA_Temperature changed
+then
+    val temp = SalleA_Temperature.state as Number
+    if (temp > 26.0) {
+        logWarn("SmartAgent.Alerte", "ALERTE SURCHAUFFE Salle A : Température anormale de " + temp + " °C !")
+    }
+end
+
+rule "Alerte surchauffe cuisine"
+when
+    Item Cuisine_Temperature changed
+then
+    val temp = Cuisine_Temperature.state as Number
+    if (temp > 27.0) {
+        logWarn("SmartAgent.Alerte", "ALERTE SURCHAUFFE Cuisine : Température anormale de " + temp + " °C !")
+    }
+end
+
+
+// --- RÈGLE 3 : GESTION DU CONFORT (Reprise chauffage si occupée) ---
+rule "Confort occupation salleA"
+when
+    Item SalleA_Occupation changed to ON
+then
+    logInfo("SmartAgent.Rules", "Salle A occupée : rétablissement de la consigne de confort à 21°C.")
+    SalleA_Thermostat.sendCommand(21.0)
+end

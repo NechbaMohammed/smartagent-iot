@@ -1,0 +1,45 @@
+// ==============================================================================
+// Configuration Items pour openHAB 4 — SmartAgent-IoT
+// Fichier : conf/items/batiment.items
+// ==============================================================================
+
+// --- Salle A ---
+Number:Temperature SalleA_Temperature "Température Salle A [%.1f °C]" <temperature> 
+    { channel="mqtt:topic:salleA:temperature" }
+
+Number SalleA_Luminosite "Luminosité Salle A [%d Lux]" <sun> 
+    { channel="mqtt:topic:salleA:luminosite" }
+
+Switch SalleA_Occupation "Occupation Salle A [%s]" <motion> 
+    { channel="mqtt:topic:salleA:occupation" }
+
+Number:Temperature SalleA_Thermostat "Consigne Thermostat Salle A [%.1f °C]" <heating> 
+    { channel="mqtt:topic:salleA:thermostat" }
+
+
+// --- Salle B ---
+Number:Temperature SalleB_Temperature "Température Salle B [%.1f °C]" <temperature> 
+    { channel="mqtt:topic:salleB:temperature" }
+
+Number SalleB_Luminosite "Luminosité Salle B [%d Lux]" <sun> 
+    { channel="mqtt:topic:salleB:luminosite" }
+
+Switch SalleB_Occupation "Occupation Salle B [%s]" <motion> 
+    { channel="mqtt:topic:salleB:occupation" }
+
+Number:Temperature SalleB_Thermostat "Consigne Thermostat Salle B [%.1f °C]" <heating> 
+    { channel="mqtt:topic:salleB:thermostat" }
+
+
+// --- Cuisine ---
+Number:Temperature Cuisine_Temperature "Température Cuisine [%.1f °C]" <temperature> 
+    { channel="mqtt:topic:cuisine:temperature" }
+
+Number Cuisine_Luminosite "Luminosité Cuisine [%d Lux]" <sun> 
+    { channel="mqtt:topic:cuisine:luminosite" }
+
+Switch Cuisine_Occupation "Occupation Cuisine [%s]" <motion> 
+    { channel="mqtt:topic:cuisine:occupation" }
+
+Number:Temperature Cuisine_Thermostat "Consigne Thermostat Cuisine [%.1f °C]" <heating> 
+    { channel="mqtt:topic:cuisine:thermostat" }

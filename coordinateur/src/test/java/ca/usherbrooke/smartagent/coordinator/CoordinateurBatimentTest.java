@@ -1,0 +1,65 @@
+package ca.usherbrooke.smartagent.coordinator;
+
+import ca.usherbrooke.smartagent.api.Constantes;
+import ca.usherbrooke.smartagent.api.IAgentPiece;
+import org.junit.jupiter.api.Test;
+
+import java.rmi.RemoteException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class CoordinateurBatimentTest {
+
+    static class MockAgentPiece implements IAgentPiece {
+        private final double temperature;
+        final AtomicReference<Double> consigneRecue = new AtomicReference<>(null);
+
+        MockAgentPiece(double temperature) {
+            this.temperature = temperature;
+        }
+
+        @Override public double getTemperature() throws RemoteException { return temperature; }
+        @Override public int getLuminosite() throws RemoteException { return 300; }
+        @Override public boolean isOccupee() throws RemoteException { return true; }
+        @Override public void setConsigneTemperature(double t) throws RemoteException { consigneRecue.set(t); }
+        @Override public String getEtat() throws RemoteException { return "{}"; }
+    }
+
+    @Test
+    public void testEquilibrageThermiqueDifferenceSuperieureA4Degres() {
+        CoordinateurBatiment coordinateur = new CoordinateurBatiment();
+
+        // Salle A à 26.0 °C et Salle B à 20.0 °C (écart = 6.0 °C > 4.0 °C)
+        MockAgentPiece agentA = new MockAgentPiece(26.0);
+        MockAgentPiece agentB = new MockAgentPiece(20.0);
+        MockAgentPiece cuisine = new MockAgentPiece(21.0);
+
+        coordinateur.getAgents().put(Constantes.SALLE_A, agentA);
+        coordinateur.getAgents().put(Constantes.SALLE_B, agentB);
+        coordinateur.getAgents().put(Constantes.CUISINE, cuisine);
+
+        coordinateur.equilibrerTemperatures();
+
+        // Vérification : l'agent le plus chaud (Salle A) a dû recevoir une consigne cible
+        assertNotNull(agentA.consigneRecue.get(), "La salle A (la plus chaude) doit recevoir un ajustement de consigne");
+        assertEquals(23.0, agentA.consigneRecue.get(), 0.01, "La consigne cible doit être la moyenne (23.0 °C)");
+        assertNull(agentB.consigneRecue.get(), "La salle B ne doit pas être pénalisée");
+    }
+
+    @Test
+    public void testAucunEquilibrageSiEcartInferieurA4Degres() {
+        CoordinateurBatiment coordinateur = new CoordinateurBatiment();
+
+        // Salle A à 22.0 °C et Salle B à 20.0 °C (écart = 2.0 °C <= 4.0 °C)
+        MockAgentPiece agentA = new MockAgentPiece(22.0);
+        MockAgentPiece agentB = new MockAgentPiece(20.0);
+
+        coordinateur.getAgents().put(Constantes.SALLE_A, agentA);
+        coordinateur.getAgents().put(Constantes.SALLE_B, agentB);
+
+        coordinateur.equilibrerTemperatures();
+
+        assertNull(agentA.consigneRecue.get(), "Aucun ajustement requis car écart <= 4.0 °C");
+    }
+}
