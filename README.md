@@ -3,7 +3,7 @@
 > **Cours :** IFT605 / IFT713 — Systèmes Répartis et Multi-Agents  
 > **Institution :** Université de Sherbrooke — Faculté des sciences  
 > **Enseignante :** Amal Ben Abdellah  
-> **Auteurs :** Mohammed Nechba & Sasha Martineau
+> **Auteurs :** Mohammed Nechba & Sasha Martineau  
 > **Technologies clés :** Java 21, Eclipse Mosquitto (MQTT), openHAB 4, Java RMI, Maven  
 
 ---
