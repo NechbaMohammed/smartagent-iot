@@ -1,0 +1,27 @@
+// ==============================================================================
+// Sitemap openHAB pour l'interface UI (Basic UI / Main UI) — SmartAgent-IoT
+// Fichier : conf/sitemaps/batiment.sitemap
+// ==============================================================================
+sitemap batiment label="Bâtiment Intelligent — SmartAgent-IoT" {
+
+    Frame label="Salle A (Bureau)" {
+        Text item=SalleA_Temperature icon="temperature"
+        Text item=SalleA_Luminosite icon="sun"
+        Switch item=SalleA_Occupation icon="motion"
+        Setpoint item=SalleA_Thermostat label="Consigne Thermostat [%.1f °C]" minValue=15.0 maxValue=30.0 step=0.5 icon="heating"
+    }
+
+    Frame label="Salle B (Réunion)" {
+        Text item=SalleB_Temperature icon="temperature"
+        Text item=SalleB_Luminosite icon="sun"
+        Switch item=SalleB_Occupation icon="motion"
+        Setpoint item=SalleB_Thermostat label="Consigne Thermostat [%.1f °C]" minValue=15.0 maxValue=30.0 step=0.5 icon="heating"
+    }
+
+    Frame label="Cuisine (Espace Détente)" {
+        Text item=Cuisine_Temperature icon="temperature"
+        Text item=Cuisine_Luminosite icon="sun"
+        Switch item=Cuisine_Occupation icon="motion"
+        Setpoint item=Cuisine_Thermostat label="Consigne Thermostat [%.1f °C]" minValue=15.0 maxValue=30.0 step=0.5 icon="heating"
+    }
+}

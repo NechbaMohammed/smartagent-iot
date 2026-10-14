@@ -90,48 +90,61 @@ public class CoordinateurBatiment {
                 continue;
             }
 
+            double t1;
             try {
-                double t1 = agent1.getTemperature();
-                double t2 = agent2.getTemperature();
-                double diff = Math.abs(t1 - t2);
+                t1 = agent1.getTemperature();
+            } catch (RemoteException e) {
+                LOGGER.error("[TOLÉRANCE AUX PANNES] RemoteException lors de la lecture de {} : {}. Agent retiré du cache.", p1, e.getMessage());
+                agents.remove(p1);
+                continue;
+            }
 
-                LOGGER.info("[Paire {} - {}] Mesures : {} = {} °C, {} = {} °C | Écart = {} °C (Seuil = {} °C)",
-                        p1, p2, p1, String.format(java.util.Locale.US, "%.1f", t1),
-                        p2, String.format(java.util.Locale.US, "%.1f", t2),
+            double t2;
+            try {
+                t2 = agent2.getTemperature();
+            } catch (RemoteException e) {
+                LOGGER.error("[TOLÉRANCE AUX PANNES] RemoteException lors de la lecture de {} : {}. Agent retiré du cache.", p2, e.getMessage());
+                agents.remove(p2);
+                continue;
+            }
+
+            double diff = Math.abs(t1 - t2);
+
+            LOGGER.info("[Paire {} - {}] Mesures : {} = {} °C, {} = {} °C | Écart = {} °C (Seuil = {} °C)",
+                    p1, p2, p1, String.format(java.util.Locale.US, "%.1f", t1),
+                    p2, String.format(java.util.Locale.US, "%.1f", t2),
+                    String.format(java.util.Locale.US, "%.1f", diff),
+                    Constantes.ECART_TEMPERATURE_MAX);
+
+            if (diff > Constantes.ECART_TEMPERATURE_MAX) {
+                // Calcul de la consigne cible (température moyenne ciblée ou baisse de la pièce la plus chaude)
+                String piecePlusChaude = (t1 > t2) ? p1 : p2;
+                IAgentPiece agentPlusChaud = (t1 > t2) ? agent1 : agent2;
+                double consigneCible = (t1 + t2) / 2.0;
+
+                LOGGER.warn("[DÉCISION ÉQUILIBRAGE] Écart critique détecté ({} °C > {} °C). Ajustement consigne de {} à {} °C",
                         String.format(java.util.Locale.US, "%.1f", diff),
-                        Constantes.ECART_TEMPERATURE_MAX);
+                        Constantes.ECART_TEMPERATURE_MAX,
+                        piecePlusChaude,
+                        String.format(java.util.Locale.US, "%.1f", consigneCible));
 
-                if (diff > Constantes.ECART_TEMPERATURE_MAX) {
-                    // Calcul de la consigne cible (température moyenne ciblée ou baisse de la pièce la plus chaude)
-                    String piecePlusChaude = (t1 > t2) ? p1 : p2;
-                    IAgentPiece agentPlusChaud = (t1 > t2) ? agent1 : agent2;
-                    double consigneCible = (t1 + t2) / 2.0;
-
-                    LOGGER.warn("[DÉCISION ÉQUILIBRAGE] Écart critique détecté ({} °C > {} °C). Ajustement consigne de {} à {} °C",
-                            String.format(java.util.Locale.US, "%.1f", diff),
-                            Constantes.ECART_TEMPERATURE_MAX,
-                            piecePlusChaude,
-                            String.format(java.util.Locale.US, "%.1f", consigneCible));
-
-                    // Envoi de la commande via RMI
+                // Envoi de la commande via RMI
+                try {
                     agentPlusChaud.setConsigneTemperature(consigneCible);
                     LOGGER.info("Commande RMI envoyée avec succès à {}", piecePlusChaude);
-
-                    // Notification / Synchronisation avec openHAB via API REST (Semaine 3)
-                    if (openHabClient != null) {
-                        String openHabItem = getOpenHabThermostatItem(piecePlusChaude);
-                        openHabClient.sendCommand(openHabItem, String.format(java.util.Locale.US, "%.1f", consigneCible));
-                    }
-                } else {
-                    LOGGER.debug("[Paire {} - {}] Écart thermique acceptable.", p1, p2);
+                } catch (RemoteException e) {
+                    LOGGER.error("[TOLÉRANCE AUX PANNES] Échec envoi consigne RMI à {} : {}", piecePlusChaude, e.getMessage());
+                    agents.remove(piecePlusChaude);
+                    continue;
                 }
 
-            } catch (RemoteException e) {
-                LOGGER.error("[TOLÉRANCE AUX PANNES] RemoteException lors de l'accès à la paire [{} - {}] : {}. Poursuite du cycle avec les autres agents.",
-                        p1, p2, e.getMessage());
-                // Invalide le cache pour tenter une reconnexion au prochain cycle
-                agents.remove(p1);
-                agents.remove(p2);
+                // Notification / Synchronisation avec openHAB via API REST (Semaine 3)
+                if (openHabClient != null) {
+                    String openHabItem = getOpenHabThermostatItem(piecePlusChaude);
+                    openHabClient.sendCommand(openHabItem, String.format(java.util.Locale.US, "%.1f", consigneCible));
+                }
+            } else {
+                LOGGER.debug("[Paire {} - {}] Écart thermique acceptable.", p1, p2);
             }
         }
         LOGGER.info("--- Fin du cycle d'équilibrage ---");
