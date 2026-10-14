@@ -511,6 +511,30 @@ Pour tout démarrer en une seule commande :
 
 ---
 
+## 9.2 Tableau de Bord Superviseur React Pro (Effet "WOW" Démonstration)
+
+Pour offrir une visibilité immédiate et moderne du système réparti lors de la démonstration orale, une application React professionnelle de supervision a été conçue dans `dashboard-ui/` :
+
+```bash
+cd dashboard-ui
+npm install
+npm run dev
+```
+Accès navigateur : **[http://localhost:5173/](http://localhost:5173/)**
+
+### Fonctionnalités Clés du Tableau de Bord React :
+1. **Plan d'Étage 2.5D & Gradient Thermique :** Visualisation des 3 pièces (Bureau Salle A, Réunion Salle B, Cuisine) avec coloration dynamique de la température (bleu < 19°C, vert émeraude 20-22°C, orange 23-25°C, rouge alerte > 25°C), luminosité ambiante et présence des occupants.
+2. **Topologie Répartie Interactive :** Diagramme animé illustrant le cheminement temps réel des paquets (Capteurs IoT $\rightarrow$ Mosquitto 1883 $\rightarrow$ openHAB 8080 $\rightarrow$ Agents RMI 2199 $\rightarrow$ Coordinateur $\rightarrow$ Actuateurs).
+3. **Studio Démonstration 1-Clic :**
+   - *Scénario 1 :* Provoque un différentiel $> 4^\circ\text{C}$ et affiche l'arbitrage RMI du coordinateur en temps réel.
+   - *Scénario 2 :* Simule le départ des occupants et déclenche la règle DSL openHAB d'économie d'énergie (consigne 18°C & extinction).
+   - *Scénario 3 :* Simule une coupure de sonde et affiche le compte à rebours de tolérance aux pannes (clause `expire="30s,state=UNDEF"`).
+   - *Scénario 4 :* Rétablit l'état nominal d'équilibre.
+4. **Graphiques SVG de Télémétrie :** Suivi des courbes thermiques des 3 pièces avec seuils de confort et d'alerte.
+5. **Console Répartie Filtrable :** Flux continu des messages protocolaires avec étiquetage couleur (`[MQTT]`, `[RMI]`, `[openHAB]`, `[COORD]`, `[ALERT]`).
+
+---
+
 ## 10. Grille d'Évaluation & Préparation de la Démonstration
 
 ### Barème (/100 points)
