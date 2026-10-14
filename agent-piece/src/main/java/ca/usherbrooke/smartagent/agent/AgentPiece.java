@@ -121,6 +121,11 @@ public class AgentPiece extends UnicastRemoteObject implements IAgentPiece {
         return dto.toJson();
     }
 
+    @Override
+    public String getEtatJson() throws RemoteException {
+        return getEtat();
+    }
+
     private void publierMqtt(String topic, String message) {
         try {
             if (mqttClient != null && mqttClient.isConnected()) {

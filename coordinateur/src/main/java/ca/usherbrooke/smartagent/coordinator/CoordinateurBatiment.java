@@ -35,14 +35,20 @@ public class CoordinateurBatiment {
     private final Map<String, IAgentPiece> agents = new HashMap<>();
     private final String hostRmi;
     private final int portRmi;
+    private final OpenHabRestClient openHabClient;
 
     public CoordinateurBatiment() {
-        this("localhost", Constantes.RMI_REGISTRY_PORT);
+        this("localhost", Constantes.RMI_REGISTRY_PORT, new OpenHabRestClient());
     }
 
     public CoordinateurBatiment(String hostRmi, int portRmi) {
+        this(hostRmi, portRmi, new OpenHabRestClient());
+    }
+
+    public CoordinateurBatiment(String hostRmi, int portRmi, OpenHabRestClient openHabClient) {
         this.hostRmi = hostRmi;
         this.portRmi = portRmi;
+        this.openHabClient = openHabClient;
     }
 
     /**
@@ -89,8 +95,11 @@ public class CoordinateurBatiment {
                 double t2 = agent2.getTemperature();
                 double diff = Math.abs(t1 - t2);
 
-                LOGGER.info("[Paire {} - {}] Mesures : {} = {:.1f}°C, {} = {:.1f}°C | Écart = {:.1f}°C (Seuil = {:.1f}°C)",
-                        p1, p2, p1, t1, p2, t2, diff, Constantes.ECART_TEMPERATURE_MAX);
+                LOGGER.info("[Paire {} - {}] Mesures : {} = {} °C, {} = {} °C | Écart = {} °C (Seuil = {} °C)",
+                        p1, p2, p1, String.format(java.util.Locale.US, "%.1f", t1),
+                        p2, String.format(java.util.Locale.US, "%.1f", t2),
+                        String.format(java.util.Locale.US, "%.1f", diff),
+                        Constantes.ECART_TEMPERATURE_MAX);
 
                 if (diff > Constantes.ECART_TEMPERATURE_MAX) {
                     // Calcul de la consigne cible (température moyenne ciblée ou baisse de la pièce la plus chaude)
@@ -98,12 +107,21 @@ public class CoordinateurBatiment {
                     IAgentPiece agentPlusChaud = (t1 > t2) ? agent1 : agent2;
                     double consigneCible = (t1 + t2) / 2.0;
 
-                    LOGGER.warn("[DÉCISION ÉQUILIBRAGE] Écart critique détecté ({:.1f}°C > {:.1f}°C). Ajustement consigne de {} à {:.1f}°C",
-                            diff, Constantes.ECART_TEMPERATURE_MAX, piecePlusChaude, consigneCible);
+                    LOGGER.warn("[DÉCISION ÉQUILIBRAGE] Écart critique détecté ({} °C > {} °C). Ajustement consigne de {} à {} °C",
+                            String.format(java.util.Locale.US, "%.1f", diff),
+                            Constantes.ECART_TEMPERATURE_MAX,
+                            piecePlusChaude,
+                            String.format(java.util.Locale.US, "%.1f", consigneCible));
 
                     // Envoi de la commande via RMI
                     agentPlusChaud.setConsigneTemperature(consigneCible);
                     LOGGER.info("Commande RMI envoyée avec succès à {}", piecePlusChaude);
+
+                    // Notification / Synchronisation avec openHAB via API REST (Semaine 3)
+                    if (openHabClient != null) {
+                        String openHabItem = getOpenHabThermostatItem(piecePlusChaude);
+                        openHabClient.sendCommand(openHabItem, String.format(java.util.Locale.US, "%.1f", consigneCible));
+                    }
                 } else {
                     LOGGER.debug("[Paire {} - {}] Écart thermique acceptable.", p1, p2);
                 }
@@ -133,7 +151,18 @@ public class CoordinateurBatiment {
         return agents.get(piece);
     }
 
+    public String getOpenHabThermostatItem(String piece) {
+        if (Constantes.SALLE_A.equalsIgnoreCase(piece)) return "SalleA_Thermostat";
+        if (Constantes.SALLE_B.equalsIgnoreCase(piece)) return "SalleB_Thermostat";
+        if (Constantes.CUISINE.equalsIgnoreCase(piece)) return "Cuisine_Thermostat";
+        return piece + "_Thermostat";
+    }
+
     public Map<String, IAgentPiece> getAgents() {
         return agents;
+    }
+
+    public OpenHabRestClient getOpenHabClient() {
+        return openHabClient;
     }
 }

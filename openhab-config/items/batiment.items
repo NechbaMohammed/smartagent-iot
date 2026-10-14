@@ -2,16 +2,18 @@
 // Configuration Items pour openHAB 4 — SmartAgent-IoT
 // Fichier : conf/items/batiment.items
 // ==============================================================================
+// Chaque capteur inclut la directive expire="30s,state=UNDEF" pour passer automatiquement
+// en état UNDEF si aucun message MQTT n'est reçu pendant 30 secondes (tolérance aux pannes).
 
 // --- Salle A ---
 Number:Temperature SalleA_Temperature "Température Salle A [%.1f °C]" <temperature> 
-    { channel="mqtt:topic:salleA:temperature" }
+    { channel="mqtt:topic:salleA:temperature", expire="30s,state=UNDEF" }
 
 Number SalleA_Luminosite "Luminosité Salle A [%d Lux]" <sun> 
-    { channel="mqtt:topic:salleA:luminosite" }
+    { channel="mqtt:topic:salleA:luminosite", expire="30s,state=UNDEF" }
 
 Switch SalleA_Occupation "Occupation Salle A [%s]" <motion> 
-    { channel="mqtt:topic:salleA:occupation" }
+    { channel="mqtt:topic:salleA:occupation", expire="30s,state=UNDEF" }
 
 Number:Temperature SalleA_Thermostat "Consigne Thermostat Salle A [%.1f °C]" <heating> 
     { channel="mqtt:topic:salleA:thermostat" }
@@ -19,13 +21,13 @@ Number:Temperature SalleA_Thermostat "Consigne Thermostat Salle A [%.1f °C]" <h
 
 // --- Salle B ---
 Number:Temperature SalleB_Temperature "Température Salle B [%.1f °C]" <temperature> 
-    { channel="mqtt:topic:salleB:temperature" }
+    { channel="mqtt:topic:salleB:temperature", expire="30s,state=UNDEF" }
 
 Number SalleB_Luminosite "Luminosité Salle B [%d Lux]" <sun> 
-    { channel="mqtt:topic:salleB:luminosite" }
+    { channel="mqtt:topic:salleB:luminosite", expire="30s,state=UNDEF" }
 
 Switch SalleB_Occupation "Occupation Salle B [%s]" <motion> 
-    { channel="mqtt:topic:salleB:occupation" }
+    { channel="mqtt:topic:salleB:occupation", expire="30s,state=UNDEF" }
 
 Number:Temperature SalleB_Thermostat "Consigne Thermostat Salle B [%.1f °C]" <heating> 
     { channel="mqtt:topic:salleB:thermostat" }
@@ -33,13 +35,13 @@ Number:Temperature SalleB_Thermostat "Consigne Thermostat Salle B [%.1f °C]" <h
 
 // --- Cuisine ---
 Number:Temperature Cuisine_Temperature "Température Cuisine [%.1f °C]" <temperature> 
-    { channel="mqtt:topic:cuisine:temperature" }
+    { channel="mqtt:topic:cuisine:temperature", expire="30s,state=UNDEF" }
 
 Number Cuisine_Luminosite "Luminosité Cuisine [%d Lux]" <sun> 
-    { channel="mqtt:topic:cuisine:luminosite" }
+    { channel="mqtt:topic:cuisine:luminosite", expire="30s,state=UNDEF" }
 
 Switch Cuisine_Occupation "Occupation Cuisine [%s]" <motion> 
-    { channel="mqtt:topic:cuisine:occupation" }
+    { channel="mqtt:topic:cuisine:occupation", expire="30s,state=UNDEF" }
 
 Number:Temperature Cuisine_Thermostat "Consigne Thermostat Cuisine [%.1f °C]" <heating> 
     { channel="mqtt:topic:cuisine:thermostat" }

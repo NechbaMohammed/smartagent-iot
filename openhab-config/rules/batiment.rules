@@ -3,12 +3,14 @@
 // Fichier : conf/rules/batiment.rules
 // ==============================================================================
 
-// --- RÈGLE 1 : ÉCONOMIE D'ÉNERGIE (Baisse de chauffage si pièce vide) ---
+// ==============================================================================
+// RÈGLE 1 : ÉCONOMIE D'ÉNERGIE (Baisse automatique si pièce inoccupée)
+// ==============================================================================
 rule "Economie energie salleA"
 when
     Item SalleA_Occupation changed to OFF
 then
-    logInfo("SmartAgent.Rules", "Salle A inoccupée : réduction de la consigne à 18°C pour économie d'énergie.")
+    logInfo("SmartAgent.Rules", "Salle A inoccupée : réduction consigne thermostat à 18°C.")
     SalleA_Thermostat.sendCommand(18.0)
 end
 
@@ -16,19 +18,71 @@ rule "Economie energie salleB"
 when
     Item SalleB_Occupation changed to OFF
 then
-    logInfo("SmartAgent.Rules", "Salle B inoccupée : réduction de la consigne à 18°C.")
+    logInfo("SmartAgent.Rules", "Salle B inoccupée : réduction consigne thermostat à 18°C.")
     SalleB_Thermostat.sendCommand(18.0)
 end
 
+rule "Economie energie cuisine"
+when
+    Item Cuisine_Occupation changed to OFF
+then
+    logInfo("SmartAgent.Rules", "Cuisine inoccupée : réduction consigne thermostat à 18°C.")
+    Cuisine_Thermostat.sendCommand(18.0)
+end
 
-// --- RÈGLE 2 : ALERTE SURCHAUFFE / ANOMALIE THERMIQUE ---
+
+// ==============================================================================
+// RÈGLE 2 : CONFORT & PRÉSENCE (Rétablissement consigne confort quand occupée)
+// ==============================================================================
+rule "Confort occupation salleA"
+when
+    Item SalleA_Occupation changed to ON
+then
+    logInfo("SmartAgent.Rules", "Salle A occupée : rétablissement consigne confort à 21°C.")
+    SalleA_Thermostat.sendCommand(21.0)
+end
+
+rule "Confort occupation salleB"
+when
+    Item SalleB_Occupation changed to ON
+then
+    logInfo("SmartAgent.Rules", "Salle B occupée : rétablissement consigne confort à 21°C.")
+    SalleB_Thermostat.sendCommand(21.0)
+end
+
+rule "Confort occupation cuisine"
+when
+    Item Cuisine_Occupation changed to ON
+then
+    logInfo("SmartAgent.Rules", "Cuisine occupée : rétablissement consigne confort à 20°C.")
+    Cuisine_Thermostat.sendCommand(20.0)
+end
+
+
+// ==============================================================================
+// RÈGLE 3 : ALERTE SURCHAUFFE / ANOMALIE THERMIQUE (> 26.0°C)
+// ==============================================================================
 rule "Alerte surchauffe salleA"
 when
     Item SalleA_Temperature changed
 then
-    val temp = SalleA_Temperature.state as Number
-    if (temp > 26.0) {
-        logWarn("SmartAgent.Alerte", "ALERTE SURCHAUFFE Salle A : Température anormale de " + temp + " °C !")
+    if (SalleA_Temperature.state !== null && SalleA_Temperature.state != UNDEF) {
+        val temp = SalleA_Temperature.state as Number
+        if (temp > 26.0) {
+            logWarn("SmartAgent.Alerte", "ALERTE SURCHAUFFE Salle A : Température anormale de " + temp + " °C !")
+        }
+    }
+end
+
+rule "Alerte surchauffe salleB"
+when
+    Item SalleB_Temperature changed
+then
+    if (SalleB_Temperature.state !== null && SalleB_Temperature.state != UNDEF) {
+        val temp = SalleB_Temperature.state as Number
+        if (temp > 26.0) {
+            logWarn("SmartAgent.Alerte", "ALERTE SURCHAUFFE Salle B : Température anormale de " + temp + " °C !")
+        }
     }
 end
 
@@ -36,18 +90,35 @@ rule "Alerte surchauffe cuisine"
 when
     Item Cuisine_Temperature changed
 then
-    val temp = Cuisine_Temperature.state as Number
-    if (temp > 27.0) {
-        logWarn("SmartAgent.Alerte", "ALERTE SURCHAUFFE Cuisine : Température anormale de " + temp + " °C !")
+    if (Cuisine_Temperature.state !== null && Cuisine_Temperature.state != UNDEF) {
+        val temp = Cuisine_Temperature.state as Number
+        if (temp > 27.0) {
+            logWarn("SmartAgent.Alerte", "ALERTE SURCHAUFFE Cuisine : Température anormale de " + temp + " °C !")
+        }
     }
 end
 
 
-// --- RÈGLE 3 : GESTION DU CONFORT (Reprise chauffage si occupée) ---
-rule "Confort occupation salleA"
+// ==============================================================================
+// RÈGLE 4 : DÉTECTION ET JOURNALISATION DE TIMEOUT CAPTEUR (État UNDEF)
+// ==============================================================================
+rule "Alerte panne capteur salleA"
 when
-    Item SalleA_Occupation changed to ON
+    Item SalleA_Temperature changed to UNDEF
 then
-    logInfo("SmartAgent.Rules", "Salle A occupée : rétablissement de la consigne de confort à 21°C.")
-    SalleA_Thermostat.sendCommand(21.0)
+    logError("SmartAgent.Panne", "DÉFAILLANCE CAPTEUR : Salle A en TIMEOUT (>30s sans message MQTT) !")
+end
+
+rule "Alerte panne capteur salleB"
+when
+    Item SalleB_Temperature changed to UNDEF
+then
+    logError("SmartAgent.Panne", "DÉFAILLANCE CAPTEUR : Salle B en TIMEOUT (>30s sans message MQTT) !")
+end
+
+rule "Alerte panne capteur cuisine"
+when
+    Item Cuisine_Temperature changed to UNDEF
+then
+    logError("SmartAgent.Panne", "DÉFAILLANCE CAPTEUR : Cuisine en TIMEOUT (>30s sans message MQTT) !")
 end

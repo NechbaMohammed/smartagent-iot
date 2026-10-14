@@ -21,7 +21,7 @@ import java.util.Random;
  */
 public class CapteurSimulateur implements Runnable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CapteurSimulateur.java);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CapteurSimulateur.class);
 
     private final String piece;
     private final String brokerUri;
