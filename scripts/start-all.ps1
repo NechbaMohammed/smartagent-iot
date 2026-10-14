@@ -47,5 +47,8 @@ Write-Host "[4/4] Démarrage du Coordinateur central RMI..." -ForegroundColor Ye
 $cmdCoord = "$envInit mvn -pl coordinateur exec:java -Dexec.mainClass=ca.usherbrooke.smartagent.coordinator.CoordinateurMain"
 Start-Process "powershell" -WorkingDirectory $rootDir -ArgumentList "-NoExit", "-Command", $cmdCoord
 
-Write-Host "`nTous les modules ont été lancés avec succès !" -ForegroundColor Green
-Write-Host "Consultez les fenêtres PowerShell pour observer les flux MQTT et les appels RMI.`n" -ForegroundColor Cyan
+Write-Host "`nTous les modules backend ont été lancés avec succès !" -ForegroundColor Green
+Write-Host "Consultez les fenêtres PowerShell pour observer les flux MQTT et les appels RMI." -ForegroundColor Cyan
+Write-Host "`n🚀 Pour ouvrir le Tableau de Bord React Pro (WOW Effect Professeur) :" -ForegroundColor Magenta
+Write-Host "   cd dashboard-ui ; npm run dev" -ForegroundColor Yellow
+Write-Host "   URL : http://localhost:5173/`n" -ForegroundColor Yellow

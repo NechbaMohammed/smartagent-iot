@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartAgent-IoT — Tableau de Bord Bâtiment</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 24px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        h1 { margin: 0; font-size: 24px; color: var(--accent-blue); }
+        .badge {
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+        .card-title { font-size: 18px; font-weight: 600; color: #fff; }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .metric-row:last-child { border-bottom: none; }
+        .metric-label { font-size: 14px; color: #8b949e; }
+        .metric-value { font-size: 18px; font-weight: bold; }
+        .val-temp { color: var(--accent-orange); }
+        .val-lum { color: #e3b341; }
+        .status-occupied {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .status-empty {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .log-box {
+            background-color: #010409;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+            height: 180px;
+            overflow-y: auto;
+            color: #7ee787;
+        }
+        .btn-ctrl {
+            background: #21262d;
+            border: 1px solid var(--border-color);
+            color: #c9d1d9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+            transition: all 0.2s;
+        }
+        .btn-ctrl:hover {
+            background: #30363d;
+            border-color: #8b949e;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>SmartAgent-IoT — Superviseur Étage Bâtiment</h1>
+            <small style="color: #8b949e;">Architecture Hybride : MQTT (1883) + Java RMI (2199) + openHAB</small>
+        </div>
+        <div>
+            <span class="badge" id="brokerStatus">Réseau Local Actif</span>
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- Salle A -->
+        <div class="card" id="cardA">
+            <div class="card-header">
+                <span class="card-title">🏢 Salle A (Bureau)</span>
+                <span class="status-occupied" id="occA">Occupée</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Température mesurée :</span>
+                <span class="metric-value val-temp" id="tempA">22.4 °C</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Luminosité ambiante :</span>
+                <span class="metric-value val-lum" id="lumA">380 Lux</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Consigne Thermostat :</span>
+                <span class="metric-value" style="color: var(--accent-blue);" id="setA">21.0 °C</span>
+            </div>
+            <div style="margin-top: 14px;">
+                <button class="btn-ctrl" onclick="toggleOccupation('A')">Basculer Présence</button>
+                <button class="btn-ctrl" onclick="provoquerSurchauffe('A')">Surchauffe (26.5°C)</button>
+            </div>
+        </div>
+
+        <!-- Salle B -->
+        <div class="card" id="cardB">
+            <div class="card-header">
+                <span class="card-title">💼 Salle B (Réunion)</span>
+                <span class="status-occupied" id="occB">Occupée</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Température mesurée :</span>
+                <span class="metric-value val-temp" id="tempB">20.2 °C</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Luminosité ambiante :</span>
+                <span class="metric-value val-lum" id="lumB">420 Lux</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Consigne Thermostat :</span>
+                <span class="metric-value" style="color: var(--accent-blue);" id="setB">20.5 °C</span>
+            </div>
+            <div style="margin-top: 14px;">
+                <button class="btn-ctrl" onclick="toggleOccupation('B')">Basculer Présence</button>
+                <button class="btn-ctrl" onclick="provoquerSurchauffe('B')">Surchauffe (27.0°C)</button>
+            </div>
+        </div>
+
+        <!-- Cuisine -->
+        <div class="card" id="cardC">
+            <div class="card-header">
+                <span class="card-title">☕ Cuisine (Détente)</span>
+                <span class="status-empty" id="occC">Vide</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Température mesurée :</span>
+                <span class="metric-value val-temp" id="tempC">19.5 °C</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Luminosité ambiante :</span>
+                <span class="metric-value val-lum" id="lumC">250 Lux</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Consigne Thermostat :</span>
+                <span class="metric-value" style="color: var(--accent-blue);" id="setC">18.0 °C</span>
+            </div>
+            <div style="margin-top: 14px;">
+                <button class="btn-ctrl" onclick="toggleOccupation('C')">Basculer Présence</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Journal des événements -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">📡 Journal des flux MQTT & Décisions du Coordinateur RMI</span>
+            <button class="btn-ctrl" onclick="document.getElementById('logs').innerHTML=''">Effacer logs</button>
+        </div>
+        <div class="log-box" id="logs">
+            [SYS] Tableau de bord initialisé.<br/>
+            [RMI] Registre connecté sur le port 2199 (agent-salleA, agent-salleB, agent-cuisine).<br/>
+            [MQTT] Abonnement aux topics batiment/+/capteur/# actif.<br/>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            A: { temp: 22.4, lum: 380, occ: true, consigne: 21.0 },
+            B: { temp: 20.2, lum: 420, occ: true, consigne: 20.5 },
+            C: { temp: 19.5, lum: 250, occ: false, consigne: 18.0 }
+        };
+
+        function addLog(msg) {
+            const logs = document.getElementById('logs');
+            const time = new Date().toLocaleTimeString();
+            logs.innerHTML = `[${time}] ${msg}<br/>` + logs.innerHTML;
+        }
+
+        function updateUI() {
+            for (const p of ['A', 'B', 'C']) {
+                document.getElementById('temp' + p).textContent = state[p].temp.toFixed(1) + ' °C';
+                document.getElementById('lum' + p).textContent = state[p].lum + ' Lux';
+                document.getElementById('set' + p).textContent = state[p].consigne.toFixed(1) + ' °C';
+
+                const occEl = document.getElementById('occ' + p);
+                if (state[p].occ) {
+                    occEl.className = 'status-occupied';
+                    occEl.textContent = 'Occupée';
+                } else {
+                    occEl.className = 'status-empty';
+                    occEl.textContent = 'Vide';
+                }
+            }
+        }
+
+        function toggleOccupation(p) {
+            state[p].occ = !state[p].occ;
+            addLog(`[MQTT] batiment/salle${p}/capteur/occupation -> ${state[p].occ}`);
+            if (!state[p].occ) {
+                state[p].consigne = 18.0;
+                addLog(`[openHAB DSL] Règle "Economie energie" déclenchée -> Consigne salle${p} = 18.0°C`);
+            } else {
+                state[p].consigne = 21.0;
+                addLog(`[openHAB DSL] Règle "Confort occupation" déclenchée -> Consigne salle${p} = 21.0°C`);
+            }
+            updateUI();
+        }
+
+        function provoquerSurchauffe(p) {
+            state[p].temp = 26.8;
+            addLog(`[MQTT] PUBLISH batiment/salle${p}/capteur/temperature -> 26.8°C`);
+            addLog(`[openHAB DSL] ALERTE SURCHAUFFE Salle ${p} : Température > 26.0°C !`);
+            verifierEquilibrage();
+            updateUI();
+        }
+
+        function verifierEquilibrage() {
+            // Test paire A - B
+            const diffAB = Math.abs(state.A.temp - state.B.temp);
+            if (diffAB > 4.0) {
+                const target = ((state.A.temp + state.B.temp) / 2.0).toFixed(1);
+                addLog(`[COORD RMI] Écart critique détecté (|${state.A.temp.toFixed(1)} - ${state.B.temp.toFixed(1)}| = ${diffAB.toFixed(1)}°C > 4°C) !`);
+                if (state.A.temp > state.B.temp) {
+                    state.A.consigne = parseFloat(target);
+                    addLog(`[COORD RMI] Appel RMI setConsigneTemperature(${target}) envoyé à Agent Salle A.`);
+                    addLog(`[Agent A] Publication consigne actuateur sur MQTT : batiment/salleA/actuateur/thermostat -> ${target}`);
+                }
+            }
+        }
+
+        // Simulation progressive en direct
+        setInterval(() => {
+            for (const p of ['A', 'B', 'C']) {
+                const delta = (Math.random() - 0.5) * 0.4;
+                state[p].temp = Math.max(16.0, Math.min(28.0, state[p].temp + delta));
+            }
+            updateUI();
+        }, 5000);
+
+        updateUI();
+    </script>
+</body>
+</html>
