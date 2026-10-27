@@ -50,15 +50,29 @@ public class CapteurSimulateur implements Runnable {
         options.setAutomaticReconnect(true);
         options.setCleanSession(true);
         options.setConnectionTimeout(10);
-        client.connect(options);
+        try {
+            client.connect(options);
+        } catch (MqttException e) {
+            // Libere les ressources du client rate avant une nouvelle tentative
+            try { client.close(); } catch (MqttException ignored) { }
+            client = null;
+            throw e;
+        }
         LOGGER.info("[{}] Connecté au broker MQTT ({})", piece, brokerUri);
     }
 
     @Override
     public void run() {
         try {
-            if (client == null || !client.isConnected()) {
-                initClient();
+            // Tolérance au démarrage : si le broker n'est pas encore prêt, on réessaie toutes les 3 s
+            while (running && !Thread.currentThread().isInterrupted()
+                    && (client == null || !client.isConnected())) {
+                try {
+                    initClient();
+                } catch (MqttException e) {
+                    LOGGER.warn("[{}] Broker MQTT indisponible ({}). Nouvelle tentative dans 3 s...", piece, e.getMessage());
+                    Thread.sleep(3000);
+                }
             }
 
             while (running && !Thread.currentThread().isInterrupted()) {

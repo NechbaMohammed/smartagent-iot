@@ -52,8 +52,26 @@ public class AgentPiece extends UnicastRemoteObject implements IAgentPiece {
         MqttConnectOptions opts = new MqttConnectOptions();
         opts.setAutomaticReconnect(true);
         opts.setCleanSession(true);
+        opts.setConnectionTimeout(10);
 
-        mqttClient.connect(opts);
+        int maxRetries = 10;
+        for (int i = 1; i <= maxRetries; i++) {
+            try {
+                mqttClient.connect(opts);
+                break;
+            } catch (MqttException e) {
+                if (i == maxRetries) {
+                    throw e;
+                }
+                LOGGER.warn("[Agent {}] Broker MQTT non disponible (tentative {}/{}), nouvelle tentative dans 2 s...", nomPiece, i, maxRetries);
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new MqttException(MqttException.REASON_CODE_CLIENT_EXCEPTION);
+                }
+            }
+        }
         LOGGER.info("[Agent {}] Connecté à MQTT ({})", nomPiece, brokerUri);
 
         String topicAbonnement = Constantes.topicWildcardPiece(nomPiece);

@@ -44,3 +44,8 @@ Thumbs.db
 node_modules/
 dist/
 .vite/
+
+# Local logs and academic report (kept outside Git)
+logs/
+report/
+*.pdf

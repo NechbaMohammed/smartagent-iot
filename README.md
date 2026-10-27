@@ -511,7 +511,7 @@ Pour tout démarrer en une seule commande :
 
 ---
 
-## 9.2 Tableau de Bord Superviseur React Pro (Effet "WOW" Démonstration)
+## 9.2 Tableau de Bord Superviseur React Pro
 
 Pour offrir une visibilité immédiate et moderne du système réparti lors de la démonstration orale, une application React professionnelle de supervision a été conçue dans `dashboard-ui/` :
 
